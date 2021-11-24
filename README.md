@@ -1,2 +1,5 @@
-# api_yamdb
-api_yamdb
+API for YaMdb
+Developers:
+Mokhov Alexander
+Zatushevskiy Stas
+Avdeenko Alexander
