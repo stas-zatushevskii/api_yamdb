@@ -1,13 +1,4 @@
-import datetime
 from django.core.exceptions import ValidationError
-
-
-def year_validation(year_value):
-    if year_value > datetime.datetime.now().year:
-        raise ValidationError(
-            'Ошибка, %(value) больше текущего года!',
-            params={'value': year_value},
-        )
 
 
 def score_validation(value):
@@ -16,5 +7,5 @@ def score_validation(value):
 
 
 def text_validation(value):
-    if value == '':
-        raise ValidationError('incorrect text')
+    if not value:
+        raise ValidationError('Необходимо записать текст')

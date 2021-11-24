@@ -2,19 +2,20 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models import Q
 
-from .validators import score_validation, year_validation, text_validation
+from .validators import score_validation, text_validation
 
 
 class User(AbstractUser):
-    id = models.BigAutoField(primary_key=True)
-    email = models.EmailField('email', max_length=254, blank=False)
+    email = models.EmailField(
+        'email', max_length=254, blank=False, unique=True
+    )
     USER = 'user'
     MODERATOR = 'moderator'
     ADMIN = 'admin'
     ROLE_CHOICES = [
-        (USER, 'user'),
-        (MODERATOR, 'moderator'),
-        (ADMIN, 'admin'),
+        (USER, USER),
+        (MODERATOR, MODERATOR),
+        (ADMIN, ADMIN),
     ]
     role = models.CharField(
         'role',
@@ -24,13 +25,6 @@ class User(AbstractUser):
     )
     bio = models.TextField('biography', blank=True)
     confirmation_code = models.CharField(max_length=254)
-
-    def __str__(self):
-        return self.username
-
-    @property
-    def is_admin(self):
-        return self.role == self.ROLE_CHOICES[2][0]
 
     class Meta:
         constraints = [
@@ -47,6 +41,17 @@ class User(AbstractUser):
                 name='cant_given_username'
             ),
         ]
+
+    def __str__(self):
+        return self.username
+
+    @property
+    def is_admin(self):
+        return self.role == self.ADMIN
+
+    @property
+    def is_moderator(self):
+        return self.role == self.MODERATOR
 
 
 class Category(models.Model):
@@ -92,14 +97,12 @@ class Genre(models.Model):
 
 
 class Title(models.Model):
-    id = models.AutoField(primary_key=True, editable=False)
     name = models.CharField(
         max_length=256, db_index=True,
         verbose_name='Название произведения',
         help_text='Укажите название произведения'
     )
     year = models.PositiveSmallIntegerField(
-        validators=[year_validation],
         verbose_name='Год выпуска',
         help_text='Задайте год выпуска'
     )
@@ -132,7 +135,6 @@ class Title(models.Model):
 
 
 class Review(models.Model):
-    id = models.BigAutoField(primary_key=True)
     text = models.TextField(
         'text',
         validators=[text_validation],
@@ -148,7 +150,7 @@ class Review(models.Model):
         related_name='reviews',
         verbose_name='произведения',
     )
-    score = models.IntegerField(
+    score = models.PositiveSmallIntegerField(
         verbose_name='Оценка',
         validators=[score_validation],
         default=0,
@@ -160,12 +162,15 @@ class Review(models.Model):
     )
 
     class Meta:
-        unique_together = ('author', 'title')
+        constraints = (
+            models.UniqueConstraint(
+                fields=('author', 'title',),
+                name='unique_subscribers'),
+        )
         ordering = ('id',)
 
 
 class Comment(models.Model):
-    id = models.BigAutoField(primary_key=True)
     text = models.TextField('text')
     author = models.ForeignKey(
         User,
